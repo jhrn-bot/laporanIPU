@@ -8,6 +8,30 @@ st.set_page_config(
     page_title="Penjana Mesej IPU Selangor", page_icon="😷", layout="centered"
 )
 
+# --- SUNTIKAN GAYA CSS (Warna Biru Gelap untuk Ruang Input) ---
+custom_css = """
+<style>
+/* Menukar latar belakang kotak input paste kepada Biru Gelap */
+div[data-baseweb="textarea"] {
+    background-color: #0f172a !important;
+    border: 2px solid #2563eb !important;
+    border-radius: 10px !important;
+}
+
+/* Menukar warna teks di dalam kotak input kepada Putih */
+div[data-baseweb="textarea"] textarea {
+    color: #f8fafc !important;
+    font-size: 14px !important;
+}
+
+/* Menukar warna placeholder (teks petunjuk) */
+div[data-baseweb="textarea"] textarea::placeholder {
+    color: #94a3b8 !important;
+}
+</style>
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
+
 
 def parse_apims_pasted_text(raw_text):
     """Logik mengekstrak stesen Selangor dari sebarang teks copy-paste APIMS."""
@@ -115,7 +139,7 @@ def generate_whatsapp_text(data_stesen):
 
 
 def render_copy_button(text_to_copy):
-    """Membina butang khas HTML/JS untuk menyalin teks ke Papan Klip (Clipboard)."""
+    """Membina butang khas HTML/JS untuk menyalin teks ke Clipboard."""
     escaped_text = text_to_copy.replace("\\", "\\\\").replace("`", "\\`").replace("\n", "\\n")
     html_code = f"""
     <div style="margin-top: 10px; margin-bottom: 20px;">
@@ -160,7 +184,7 @@ st.markdown("---")
 
 st.subheader("📋 Tampal (Paste) Data APIMS di sini:")
 raw_input = st.text_area(
-    "Copy senarai dari web APIMS (Ctrl+A / highlight) dan tampal di bawah:",
+    "Copy senarai dari web APIMS (Ctrl+A / highlight) dan tampal dalam kotak biru gelap di bawah:",
     height=200,
     placeholder="Tampal teks di sini...",
 )
@@ -179,7 +203,6 @@ if st.button("🚀 Ekstrak Selangor & Jana Laporan", type="primary"):
                 "Teks Mesej WhatsApp (Sedia Salin):", formatted_text, height=280
             )
 
-            # Butang Salin baharu menggantikan code block lama
             render_copy_button(formatted_text)
 
         else:
