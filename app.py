@@ -2,84 +2,47 @@ import datetime
 import re
 from zoneinfo import ZoneInfo
 import bs4
+import requests
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 st.set_page_config(
     page_title="Penjana Mesej IPU Selangor", page_icon="😷", layout="centered"
 )
 
 
-def get_chrome_driver():
-    """Membina Selenium Webdriver yang melepasi Cloudflare/Firewall APIMS."""
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    )
-
-    try:
-        # Untuk Streamlit Cloud (Linux Container)
-        service = Service("/usr/bin/chromedriver")
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-    except Exception:
-        # Untuk ujian tempatan (Komputer sendiri)
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-
-    return driver
-
-
-def fetch_apims_browser_data():
-    """Simulasi pelayar sebenar untuk mengambil bacaan jam terkini dari APIMS."""
-    driver = get_chrome_driver()
-    url = "https://eqms.doe.gov.my/APIMS/main"
-
+def fetch_apims_direct():
+    """Tarik data secara terus dari APIMS."""
     selangor_stations = {}
-
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        ),
+        "Referer": "https://eqms.doe.gov.my/APIMS/main",
+    }
     try:
-        driver.get(url)
-        # Beri masa 5 saat untuk JavaScript APIMS render jadual penuh
-        driver.implicitly_wait(5)
-
-        html_content = driver.page_source
-        soup = bs4.BeautifulSoup(html_content, "html.parser")
-
-        # Cari semua baris jadual yang mengandungi Selangor
-        rows = soup.find_all("tr")
-        for row in rows:
+        url = "https://eqms.doe.gov.my/APIMS/main"
+        res = requests.get(url, headers=headers, timeout=5)
+        soup = bs4.BeautifulSoup(res.text, "html.parser")
+        for row in soup.find_all("tr"):
             text = row.get_text(" ", strip=True)
             if "SELANGOR" in text.upper():
-                # Corak regex mencari Nama Stesen & IPU (cth: Shah Alam 154**)
                 match = re.search(
                     r"(Klang \(Johan Setia\)|Klang|Shah Alam|Petaling Jaya|Kuala Selangor|Banting)(?:.*?)\s(\d{1,3})\*\*",
                     text,
                     re.IGNORECASE,
                 )
                 if match:
-                    loc = match.group(1).strip()
-                    val = int(match.group(2))
-                    selangor_stations[loc] = val
+                    selangor_stations[match.group(1).strip()] = int(
+                        match.group(2)
+                    )
+    except Exception:
+        pass
 
-    except Exception as e:
-        st.error(f"Ralat semasa membaca APIMS Browser: {e}")
-    finally:
-        driver.quit()
-
-    return [
-        {"location": loc, "value": val}
-        for loc, val in selangor_stations.items()
-    ]
+    return selangor_stations
 
 
 def generate_whatsapp_text(data_stesen):
-    """Menjana format teks rasmi CPRC JKN Selangor mengikut Zon Masa Malaysia."""
+    """Jana teks format rasmi CPRC."""
     kl_tz = ZoneInfo("Asia/Kuala_Lumpur")
     now = datetime.datetime.now(kl_tz)
 
@@ -97,7 +60,6 @@ def generate_whatsapp_text(data_stesen):
         11: "November",
         12: "Disember",
     }
-
     tarikh = f"{now.day} {bulan_malay[now.month]} {now.year}"
 
     hour_12 = now.strftime("%I").lstrip("0")
@@ -107,12 +69,10 @@ def generate_whatsapp_text(data_stesen):
 
     masa = f"{hour_12}.00 {am_pm}"
 
-    unhealthy = []
-    moderate = []
-    good = []
+    unhealthy, moderate, good = [], [], []
 
-    for item in data_stesen:
-        val = item["value"]
+    for loc, val in data_stesen.items():
+        item = {"location": loc, "value": val}
         if val > 100:
             unhealthy.append(item)
         elif val > 50:
@@ -154,29 +114,53 @@ def generate_whatsapp_text(data_stesen):
     return text
 
 
-# --- PAPARAN STREAMLIT ---
+# --- INTERFACE STREAMLIT ---
 st.title("😷 Penjana Kenyataan IPU Selangor")
 st.caption("Khusus untuk kegunaan CPRC JKN Selangor")
 
 st.markdown("---")
 
-if st.button("🔄 Tarik Data Live (Browser Engine) & Jana Mesej", type="primary"):
-    with st.spinner("Membuka browser automatik & mengambil data jam terkini..."):
-        stesen_data = fetch_apims_browser_data()
+# Pilihan Moda Kaedah Data
+mode = st.radio(
+    "Pilih Kaedah Masukan Data:",
+    ("Automatik (Auto-Fetch)", "Semakan/Kemaskini Manual"),
+)
 
-        if stesen_data:
-            formatted_text = generate_whatsapp_text(stesen_data)
-            st.success("Teks kenyataan berjaya dijana dari laman live!")
+input_data = {}
 
-            st.text_area(
-                "Teks Mesej WhatsApp (Sedia Salin):",
-                formatted_text,
-                height=320,
-            )
+if mode == "Automatik (Auto-Fetch)":
+    if st.button("🔄 Tarik Data APIMS & Jana Mesej", type="primary"):
+        with st.spinner("Mengakses APIMS..."):
+            input_data = fetch_apims_direct()
+            if not input_data:
+                st.warning(
+                    "⚠️ Sambungan automatik ke APIMS disekat oleh server/firewall. "
+                    "Sila tukar ke mod 'Semakan/Kemaskini Manual' di atas untuk jana laporan serta-merta."
+                )
+else:
+    st.subheader("Masukkan Bacaan IPU Stesen Selangor:")
+    col1, col2 = st.columns(2)
+    with col1:
+        v_sa = st.number_input("Shah Alam", value=154)
+        v_js = st.number_input("Klang (Johan Setia)", value=153)
+        v_pj = st.number_input("Petaling Jaya", value=133)
+    with col2:
+        v_kl = st.number_input("Klang", value=98)
+        v_ks = st.number_input("Kuala Selangor", value=95)
+        v_bt = st.number_input("Banting", value=92)
 
-            st.subheader("Klik salin di penjuru kanan kotak di bawah:")
-            st.code(formatted_text, language="text")
-        else:
-            st.error(
-                "Gagal mendapatkan data stesen. Sila pastikan laman web APIMS boleh diakses dan cuba lagi."
-            )
+    input_data = {
+        "Shah Alam": v_sa,
+        "Klang (Johan Setia)": v_js,
+        "Petaling Jaya": v_pj,
+        "Klang": v_kl,
+        "Kuala Selangor": v_ks,
+        "Banting": v_bt,
+    }
+
+if input_data:
+    formatted_text = generate_whatsapp_text(input_data)
+    st.success("Teks Kenyataan Berjaya Dijana!")
+
+    st.text_area("Teks Mesej WhatsApp (Sedia Salin):", formatted_text, height=300)
+    st.code(formatted_text, language="text")
