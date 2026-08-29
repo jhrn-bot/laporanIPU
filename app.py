@@ -2,6 +2,7 @@ import datetime
 import re
 from zoneinfo import ZoneInfo
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Penjana Mesej IPU Selangor", page_icon="😷", layout="centered"
@@ -9,10 +10,9 @@ st.set_page_config(
 
 
 def parse_apims_pasted_text(raw_text):
-    """Logik fleksibel untuk mengekstrak stesen Selangor dari sebarang teks copy-paste APIMS."""
+    """Logik mengekstrak stesen Selangor dari sebarang teks copy-paste APIMS."""
     selangor_stations = {}
 
-    # Senarai stesen rasmi Selangor & kata kunci carian
     stations_map = {
         "SHAH ALAM": "Shah Alam",
         "JOHAN SETIA": "Klang (Johan Setia)",
@@ -22,22 +22,16 @@ def parse_apims_pasted_text(raw_text):
         "BANTING": "Banting",
     }
 
-    # Bersihkan teks
     cleaned_text = raw_text.replace("\n", " ").replace("\r", " ")
 
-    # Regex untuk mencari corak: NAMA_STESEN ... STATION_ID ... NOMBOR**
-    # Contoh match: "Shah Alam, SELANGORCA20B156**" atau "JOHAN SETIAMCAQM001155**"
     pattern = r"(Shah Alam|JOHAN SETIA|Petaling Jaya|Kuala Selangor|Banting|Klang)(?:.*?)(?:CA\w+|MCAQM\w+)?\s*(\d{1,3})\*\*"
-
     matches = re.findall(pattern, cleaned_text, re.IGNORECASE)
 
     for loc_found, val_str in matches:
         loc_upper = loc_found.strip().upper()
 
-        # Pemadan lokasi rasmi
         for key_name, std_name in stations_map.items():
             if key_name in loc_upper:
-                # Elakkan "Klang" tersalah ambil untuk "Klang (Johan Setia)"
                 if key_name == "KLANG" and "JOHAN SETIA" in loc_upper:
                     continue
                 selangor_stations[std_name] = int(val_str)
@@ -86,7 +80,6 @@ def generate_whatsapp_text(data_stesen):
         else:
             good.append(item)
 
-    # Susun ikut bacaan tertinggi ke terendah
     unhealthy.sort(key=lambda x: x["value"], reverse=True)
     moderate.sort(key=lambda x: x["value"], reverse=True)
     good.sort(key=lambda x: x["value"], reverse=True)
@@ -121,6 +114,44 @@ def generate_whatsapp_text(data_stesen):
     return text
 
 
+def render_copy_button(text_to_copy):
+    """Membina butang khas HTML/JS untuk menyalin teks ke Papan Klip (Clipboard)."""
+    escaped_text = text_to_copy.replace("\\", "\\\\").replace("`", "\\`").replace("\n", "\\n")
+    html_code = f"""
+    <div style="margin-top: 10px; margin-bottom: 20px;">
+        <button id="copyBtn" style="
+            background-color: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        ">📋 Salin Mesej ke WhatsApp</button>
+        <span id="copyMsg" style="margin-left: 12px; color: #25D366; font-weight: bold; display: none;">✓ Berjaya Disalin!</span>
+    </div>
+
+    <script>
+    document.getElementById('copyBtn').addEventListener('click', function() {{
+        const text = `{escaped_text}`;
+        navigator.clipboard.writeText(text).then(function() {{
+            const msg = document.getElementById('copyMsg');
+            msg.style.display = 'inline';
+            setTimeout(function() {{
+                msg.style.display = 'none';
+            }}, 2500);
+        }}).catch(function(err) {{
+            alert('Gagal menyalin teks: ' + err);
+        }});
+    }});
+    </script>
+    """
+    components.html(html_code, height=70)
+
+
 # --- PAPARAN STREAMLIT ---
 st.title("😷 Penjana Kenyataan IPU Selangor")
 st.caption("Khusus untuk kegunaan CPRC JKN Selangor")
@@ -130,7 +161,7 @@ st.markdown("---")
 st.subheader("📋 Tampal (Paste) Data APIMS di sini:")
 raw_input = st.text_area(
     "Copy senarai dari web APIMS (Ctrl+A / highlight) dan tampal di bawah:",
-    height=250,
+    height=200,
     placeholder="Tampal teks di sini...",
 )
 
@@ -145,11 +176,12 @@ if st.button("🚀 Ekstrak Selangor & Jana Laporan", type="primary"):
             )
 
             st.text_area(
-                "Teks Mesej WhatsApp (Sedia Salin):", formatted_text, height=300
+                "Teks Mesej WhatsApp (Sedia Salin):", formatted_text, height=280
             )
 
-            st.subheader("Klik salin di penjuru kanan kotak di bawah:")
-            st.code(formatted_text, language="text")
+            # Butang Salin baharu menggantikan code block lama
+            render_copy_button(formatted_text)
+
         else:
             st.warning(
                 "⚠️ Tiada stesen Selangor dikesan. Pastikan teks yang di-copy mengandungi nama stesen Selangor dan bacaan IPU (contoh: 155**)."
