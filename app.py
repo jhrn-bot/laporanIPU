@@ -1,8 +1,6 @@
 import datetime
 import re
 from zoneinfo import ZoneInfo
-import bs4
-import requests
 import streamlit as st
 
 st.set_page_config(
@@ -10,56 +8,53 @@ st.set_page_config(
 )
 
 
-def fetch_apims_direct():
-    """Tarik data secara terus dari APIMS."""
+def parse_raw_apims_text(raw_text):
+    """Mengekstrak stesen Selangor dan bacaannya dari teks yang di-paste."""
     selangor_stations = {}
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        ),
-        "Referer": "https://eqms.doe.gov.my/APIMS/main",
+
+    # Senarai carian lokasi rasmi di Selangor
+    target_locations = {
+        "SHAH ALAM": "Shah Alam",
+        "JOHAN SETIA": "Klang (Johan Setia)",
+        "PETALING JAYA": "Petaling Jaya",
+        "KLANG": "Klang",
+        "KUALA SELANGOR": "Kuala Selangor",
+        "BANTING": "Banting",
     }
-    try:
-        url = "https://eqms.doe.gov.my/APIMS/main"
-        res = requests.get(url, headers=headers, timeout=5)
-        soup = bs4.BeautifulSoup(res.text, "html.parser")
-        for row in soup.find_all("tr"):
-            text = row.get_text(" ", strip=True)
-            if "SELANGOR" in text.upper():
-                match = re.search(
-                    r"(Klang \(Johan Setia\)|Klang|Shah Alam|Petaling Jaya|Kuala Selangor|Banting)(?:.*?)\s(\d{1,3})\*\*",
-                    text,
-                    re.IGNORECASE,
-                )
-                if match:
-                    selangor_stations[match.group(1).strip()] = int(
-                        match.group(2)
-                    )
-    except Exception:
-        pass
+
+    lines = raw_text.split("\n")
+
+    for line in lines:
+        line_str = line.strip()
+        if "SELANGOR" in line_str.upper() or "JOHAN SETIA" in line_str.upper():
+            # Regex untuk menangkap nama lokasi dan 2-3 digit nombor bacaan IPU sebelum simbol **
+            # Contoh: 14SelangorShah Alam, SELANGORCA20B156** ATAU 20SelangorJOHAN SETIAMCAQM001155**
+            match = re.search(r"(?:Selangor)?(.*?)(?:CA|MCAQM)\w+?(\d{1,3})\*\*", line_str, re.IGNORECASE)
+            
+            if match:
+                loc_raw = match.group(1).replace(", SELANGOR", "").strip().upper()
+                val = int(match.group(2))
+
+                # Padankan lokasi raw dengan nama standard
+                for key, std_name in target_locations.items():
+                    if key in loc_raw:
+                        selangor_stations[std_name] = val
+                        break
 
     return selangor_stations
 
 
 def generate_whatsapp_text(data_stesen):
-    """Jana teks format rasmi CPRC."""
+    """Menjana format teks rasmi CPRC JKN Selangor mengikut Zon Masa Malaysia."""
     kl_tz = ZoneInfo("Asia/Kuala_Lumpur")
     now = datetime.datetime.now(kl_tz)
 
     bulan_malay = {
-        1: "Januari",
-        2: "Februari",
-        3: "Mac",
-        4: "April",
-        5: "Mei",
-        6: "Jun",
-        7: "Julai",
-        8: "Ogos",
-        9: "September",
-        10: "Oktober",
-        11: "November",
-        12: "Disember",
+        1: "Januari", 2: "Februari", 3: "Mac", 4: "April",
+        5: "Mei", 6: "Jun", 7: "Julai", 8: "Ogos",
+        9: "September", 10: "Oktober", 11: "November", 12: "Disember"
     }
+
     tarikh = f"{now.day} {bulan_malay[now.month]} {now.year}"
 
     hour_12 = now.strftime("%I").lstrip("0")
@@ -80,6 +75,7 @@ def generate_whatsapp_text(data_stesen):
         else:
             good.append(item)
 
+    # Susun ikut bacaan tertinggi ke terendah
     unhealthy.sort(key=lambda x: x["value"], reverse=True)
     moderate.sort(key=lambda x: x["value"], reverse=True)
     good.sort(key=lambda x: x["value"], reverse=True)
@@ -114,53 +110,32 @@ def generate_whatsapp_text(data_stesen):
     return text
 
 
-# --- INTERFACE STREAMLIT ---
+# --- ANTARAMUKA STREAMLIT ---
 st.title("😷 Penjana Kenyataan IPU Selangor")
 st.caption("Khusus untuk kegunaan CPRC JKN Selangor")
 
 st.markdown("---")
 
-# Pilihan Moda Kaedah Data
-mode = st.radio(
-    "Pilih Kaedah Masukan Data:",
-    ("Automatik (Auto-Fetch)", "Semakan/Kemaskini Manual"),
+st.subheader("📋 Tampal (Paste) Raw Data dari APIMS di bawah:")
+raw_input = st.text_area(
+    "Tekan Ctrl+A pada web APIMS, copy dan paste semua kandungan di sini:",
+    height=200,
+    placeholder="Tampal teks data APIMS di sini..."
 )
 
-input_data = {}
+if st.button("🚀 Ekstrak Selangor & Jana Laporan", type="primary"):
+    if raw_input.strip():
+        stesen_data = parse_raw_apims_text(raw_input)
 
-if mode == "Automatik (Auto-Fetch)":
-    if st.button("🔄 Tarik Data APIMS & Jana Mesej", type="primary"):
-        with st.spinner("Mengakses APIMS..."):
-            input_data = fetch_apims_direct()
-            if not input_data:
-                st.warning(
-                    "⚠️ Sambungan automatik ke APIMS disekat oleh server/firewall. "
-                    "Sila tukar ke mod 'Semakan/Kemaskini Manual' di atas untuk jana laporan serta-merta."
-                )
-else:
-    st.subheader("Masukkan Bacaan IPU Stesen Selangor:")
-    col1, col2 = st.columns(2)
-    with col1:
-        v_sa = st.number_input("Shah Alam", value=154)
-        v_js = st.number_input("Klang (Johan Setia)", value=153)
-        v_pj = st.number_input("Petaling Jaya", value=133)
-    with col2:
-        v_kl = st.number_input("Klang", value=98)
-        v_ks = st.number_input("Kuala Selangor", value=95)
-        v_bt = st.number_input("Banting", value=92)
+        if stesen_data:
+            formatted_text = generate_whatsapp_text(stesen_data)
+            st.success(f"Berjaya mengesan {len(stesen_data)} stesen di Selangor!")
 
-    input_data = {
-        "Shah Alam": v_sa,
-        "Klang (Johan Setia)": v_js,
-        "Petaling Jaya": v_pj,
-        "Klang": v_kl,
-        "Kuala Selangor": v_ks,
-        "Banting": v_bt,
-    }
-
-if input_data:
-    formatted_text = generate_whatsapp_text(input_data)
-    st.success("Teks Kenyataan Berjaya Dijana!")
-
-    st.text_area("Teks Mesej WhatsApp (Sedia Salin):", formatted_text, height=300)
-    st.code(formatted_text, language="text")
+            st.text_area("Teks Mesej WhatsApp (Sedia Salin):", formatted_text, height=300)
+            
+            st.subheader("Klik salin di penjuru kanan kotak di bawah:")
+            st.code(formatted_text, language="text")
+        else:
+            st.warning("⚠️ Tiada stesen Selangor dikesan dalam teks yang dimasukkan. Sila pastikan anda copy teks jadual dari APIMS.")
+    else:
+        st.error("Sila tampal (paste) teks dari laman APIMS terlebih dahulu.")
