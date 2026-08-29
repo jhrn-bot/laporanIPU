@@ -2,85 +2,80 @@ import datetime
 import re
 from zoneinfo import ZoneInfo
 import bs4
-import requests
 import streamlit as st
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 st.set_page_config(
     page_title="Penjana Mesej IPU Selangor", page_icon="😷", layout="centered"
 )
 
 
-def fetch_apims_live_data():
-    """Mengambil data live APIMS dengan gabungan API & HTML Scraping."""
+def get_chrome_driver():
+    """Membina Selenium Webdriver yang melepasi Cloudflare/Firewall APIMS."""
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+
+    try:
+        # Untuk Streamlit Cloud (Linux Container)
+        service = Service("/usr/bin/chromedriver")
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+    except Exception:
+        # Untuk ujian tempatan (Komputer sendiri)
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    return driver
+
+
+def fetch_apims_browser_data():
+    """Simulasi pelayar sebenar untuk mengambil bacaan jam terkini dari APIMS."""
+    driver = get_chrome_driver()
+    url = "https://eqms.doe.gov.my/APIMS/main"
+
     selangor_stations = {}
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        ),
-        "Accept": "application/json, text/javascript, */*; q=0.01",
-        "Referer": "https://eqms.doe.gov.my/APIMS/main",
-        "X-Requested-With": "XMLHttpRequest",
-    }
-
-    # KAEDAH 1: Capaian melalui API JSON
     try:
-        url_api = "https://eqms.doe.gov.my/APIMS/api/hourly/getHourlyData"
-        response = requests.get(url_api, headers=headers, timeout=10)
+        driver.get(url)
+        # Beri masa 5 saat untuk JavaScript APIMS render jadual penuh
+        driver.implicitly_wait(5)
 
-        if response.status_code == 200 and response.text.strip().startswith(
-            "["
-        ):
-            data = response.json()
-            for item in data:
-                state = str(item.get("state", "")).upper()
-                if "SELANGOR" in state:
-                    loc = item.get("location", "").replace(", SELANGOR", "").strip()
-                    readings = item.get("readings", [])
-                    if readings:
-                        # Ambil bacaan paling terkini yang valid (bukan N/A)
-                        valid_readings = [
-                            r for r in readings if str(r).strip() not in ["", "N/A", "-"]
-                        ]
-                        if valid_readings:
-                            latest_raw = str(valid_readings[-1])
-                            val_digits = "".join(filter(str.isdigit, latest_raw))
-                            if val_digits:
-                                selangor_stations[loc] = int(val_digits)
-    except Exception:
-        pass
+        html_content = driver.page_source
+        soup = bs4.BeautifulSoup(html_content, "html.parser")
 
-    # KAEDAH 2: HTML Scraping jika API di-block oleh firewall server APIMS
-    if not selangor_stations:
-        try:
-            url_main = "https://eqms.doe.gov.my/APIMS/main"
-            resp_main = requests.get(url_main, headers=headers, timeout=10)
-            soup = bs4.BeautifulSoup(resp_main.text, "html.parser")
+        # Cari semua baris jadual yang mengandungi Selangor
+        rows = soup.find_all("tr")
+        for row in rows:
+            text = row.get_text(" ", strip=True)
+            if "SELANGOR" in text.upper():
+                # Corak regex mencari Nama Stesen & IPU (cth: Shah Alam 154**)
+                match = re.search(
+                    r"(Klang \(Johan Setia\)|Klang|Shah Alam|Petaling Jaya|Kuala Selangor|Banting)(?:.*?)\s(\d{1,3})\*\*",
+                    text,
+                    re.IGNORECASE,
+                )
+                if match:
+                    loc = match.group(1).strip()
+                    val = int(match.group(2))
+                    selangor_stations[loc] = val
 
-            rows = soup.find_all("tr")
-            for row in rows:
-                text = row.get_text(strip=True)
-                if "SELANGOR" in text.upper():
-                    # Format biasa: Kuala Selangor, SELANGORCA18B98**
-                    match = re.search(
-                        r"(Klang|Shah Alam|Petaling Jaya|Kuala Selangor|Banting)(?:.*?)\D(\d{1,3})\*\*",
-                        text,
-                        re.IGNORECASE,
-                    )
-                    if match:
-                        loc = match.group(1).strip()
-                        val = int(match.group(2))
-                        selangor_stations[loc] = val
-        except Exception as e:
-            st.error(f"Ralat capaian laman web APIMS: {e}")
+    except Exception as e:
+        st.error(f"Ralat semasa membaca APIMS Browser: {e}")
+    finally:
+        driver.quit()
 
-    # Tukar kepada senarai berformat
-    result = [
+    return [
         {"location": loc, "value": val}
         for loc, val in selangor_stations.items()
     ]
-    return result
 
 
 def generate_whatsapp_text(data_stesen):
@@ -165,13 +160,13 @@ st.caption("Khusus untuk kegunaan CPRC JKN Selangor")
 
 st.markdown("---")
 
-if st.button("🔄 Tarik Data Live & Jana Mesej", type="primary"):
-    with st.spinner("Sedang mengambil bacaan IPU Selangor terkini..."):
-        stesen_data = fetch_apims_live_data()
+if st.button("🔄 Tarik Data Live (Browser Engine) & Jana Mesej", type="primary"):
+    with st.spinner("Membuka browser automatik & mengambil data jam terkini..."):
+        stesen_data = fetch_apims_browser_data()
 
         if stesen_data:
             formatted_text = generate_whatsapp_text(stesen_data)
-            st.success("Teks kenyataan berjaya dijana!")
+            st.success("Teks kenyataan berjaya dijana dari laman live!")
 
             st.text_area(
                 "Teks Mesej WhatsApp (Sedia Salin):",
@@ -183,5 +178,5 @@ if st.button("🔄 Tarik Data Live & Jana Mesej", type="primary"):
             st.code(formatted_text, language="text")
         else:
             st.error(
-                "Talian ke APIMS sibuk/terputus. Sila cuba tekan butang sekali lagi."
+                "Gagal mendapatkan data stesen. Sila pastikan laman web APIMS boleh diakses dan cuba lagi."
             )
