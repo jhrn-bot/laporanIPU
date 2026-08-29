@@ -1,58 +1,90 @@
 import datetime
+import re
 from zoneinfo import ZoneInfo
+import bs4
 import requests
 import streamlit as st
 
-# Setup Konfigurasi Halaman
 st.set_page_config(
     page_title="Penjana Mesej IPU Selangor", page_icon="😷", layout="centered"
 )
 
 
 def fetch_apims_live_data():
-    """Mengambil data live secara terus daripada API JSON rasmi APIMS DOE."""
-    url = "https://eqms.doe.gov.my/APIMS/api/hourly/getHourlyData"
+    """Mengambil data live APIMS dengan gabungan API & HTML Scraping."""
+    selangor_stations = {}
+
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        )
+            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Referer": "https://eqms.doe.gov.my/APIMS/main",
+        "X-Requested-With": "XMLHttpRequest",
     }
 
-    selangor_stations = []
-
+    # KAEDAH 1: Capaian melalui API JSON
     try:
-        response = requests.get(url, headers=headers, timeout=12)
-        if response.status_code == 200:
-            data = response.json()
+        url_api = "https://eqms.doe.gov.my/APIMS/api/hourly/getHourlyData"
+        response = requests.get(url_api, headers=headers, timeout=10)
 
+        if response.status_code == 200 and response.text.strip().startswith(
+            "["
+        ):
+            data = response.json()
             for item in data:
-                # Filter stesen di Selangor sahaja
                 state = str(item.get("state", "")).upper()
                 if "SELANGOR" in state:
-                    location = item.get("location", "").strip()
-                    # Bersihkan nama lokasi dari perkataan ", SELANGOR" jika ada
-                    location = location.replace(", SELANGOR", "").strip()
-
-                    # Ambil senarai bacaan jam dan ambil bacaan paling terkini
+                    loc = item.get("location", "").replace(", SELANGOR", "").strip()
                     readings = item.get("readings", [])
                     if readings:
-                        latest_raw = str(readings[-1])
-                        # Ekstrak nombor sahaja (membuang simbol ** atau huruf)
-                        val_digits = "".join(filter(str.isdigit, latest_raw))
-                        if val_digits:
-                            selangor_stations.append(
-                                {"location": location, "value": int(val_digits)}
-                            )
-    except Exception as e:
-        st.error(f"Ralat capaian API APIMS: {e}")
+                        # Ambil bacaan paling terkini yang valid (bukan N/A)
+                        valid_readings = [
+                            r for r in readings if str(r).strip() not in ["", "N/A", "-"]
+                        ]
+                        if valid_readings:
+                            latest_raw = str(valid_readings[-1])
+                            val_digits = "".join(filter(str.isdigit, latest_raw))
+                            if val_digits:
+                                selangor_stations[loc] = int(val_digits)
+    except Exception:
+        pass
 
-    return selangor_stations
+    # KAEDAH 2: HTML Scraping jika API di-block oleh firewall server APIMS
+    if not selangor_stations:
+        try:
+            url_main = "https://eqms.doe.gov.my/APIMS/main"
+            resp_main = requests.get(url_main, headers=headers, timeout=10)
+            soup = bs4.BeautifulSoup(resp_main.text, "html.parser")
+
+            rows = soup.find_all("tr")
+            for row in rows:
+                text = row.get_text(strip=True)
+                if "SELANGOR" in text.upper():
+                    # Format biasa: Kuala Selangor, SELANGORCA18B98**
+                    match = re.search(
+                        r"(Klang|Shah Alam|Petaling Jaya|Kuala Selangor|Banting)(?:.*?)\D(\d{1,3})\*\*",
+                        text,
+                        re.IGNORECASE,
+                    )
+                    if match:
+                        loc = match.group(1).strip()
+                        val = int(match.group(2))
+                        selangor_stations[loc] = val
+        except Exception as e:
+            st.error(f"Ralat capaian laman web APIMS: {e}")
+
+    # Tukar kepada senarai berformat
+    result = [
+        {"location": loc, "value": val}
+        for loc, val in selangor_stations.items()
+    ]
+    return result
 
 
 def generate_whatsapp_text(data_stesen):
     """Menjana format teks rasmi CPRC JKN Selangor mengikut Zon Masa Malaysia."""
-
-    # 1. Penetapan Waktu Rasmi Malaysia (UTC+8)
     kl_tz = ZoneInfo("Asia/Kuala_Lumpur")
     now = datetime.datetime.now(kl_tz)
 
@@ -73,7 +105,6 @@ def generate_whatsapp_text(data_stesen):
 
     tarikh = f"{now.day} {bulan_malay[now.month]} {now.year}"
 
-    # Format waktu Bahasa Melayu
     hour_12 = now.strftime("%I").lstrip("0")
     am_pm = "pagi" if now.hour < 12 else ("tengah hari" if now.hour == 12 else "petang")
     if now.hour >= 19:
@@ -81,7 +112,6 @@ def generate_whatsapp_text(data_stesen):
 
     masa = f"{hour_12}.00 {am_pm}"
 
-    # 2. Pengkategorian IPU
     unhealthy = []
     moderate = []
     good = []
@@ -95,12 +125,10 @@ def generate_whatsapp_text(data_stesen):
         else:
             good.append(item)
 
-    # Susun nilai mengikut bacaan tertinggi
     unhealthy.sort(key=lambda x: x["value"], reverse=True)
     moderate.sort(key=lambda x: x["value"], reverse=True)
     good.sort(key=lambda x: x["value"], reverse=True)
 
-    # 3. Pembinaan Teks Mesej Rasmi
     text = f"Berikut merupakan bacaan Indeks Pencemaran Udara (IPU) yang dikeluarkan oleh Jabatan Alam Sekitar pada {tarikh}, pukul {masa} di Selangor :\n\n"
 
     if unhealthy:
@@ -131,31 +159,29 @@ def generate_whatsapp_text(data_stesen):
     return text
 
 
-# --- ANTARAMUKA STREAMLIT ---
+# --- PAPARAN STREAMLIT ---
 st.title("😷 Penjana Kenyataan IPU Selangor")
 st.caption("Khusus untuk kegunaan CPRC JKN Selangor")
 
 st.markdown("---")
 
 if st.button("🔄 Tarik Data Live & Jana Mesej", type="primary"):
-    with st.spinner("Sedang menarik data live dari API APIMS..."):
+    with st.spinner("Sedang mengambil bacaan IPU Selangor terkini..."):
         stesen_data = fetch_apims_live_data()
 
         if stesen_data:
             formatted_text = generate_whatsapp_text(stesen_data)
-            st.success("Teks berjaya dijana dengan data terkini!")
+            st.success("Teks kenyataan berjaya dijana!")
 
-            # Kotak Paparan Teks Mesej
             st.text_area(
                 "Teks Mesej WhatsApp (Sedia Salin):",
                 formatted_text,
                 height=320,
             )
 
-            # Butang Salin
             st.subheader("Klik salin di penjuru kanan kotak di bawah:")
             st.code(formatted_text, language="text")
         else:
             st.error(
-                "Gagal mengambil data dari APIMS. Sila cuba seketika lagi."
+                "Talian ke APIMS sibuk/terputus. Sila cuba tekan butang sekali lagi."
             )
