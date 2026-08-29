@@ -32,8 +32,6 @@ def fetch_apims_data():
         for row in rows:
             text = row.get_text(strip=True)
             if "Selangor" in text:
-                # Menggunakan regex untuk mengekstrak nama stesen dan nilai IPU terakhir
-                # Contoh format: 1SelangorKlang, SELANGORCA21B98**
                 match = re.search(
                     r"Selangor(.*?)(?:CA|MCAQM)\w+?(\d{1,3})\*\*", text
                 )
@@ -87,7 +85,7 @@ def generate_whatsapp_text(data_stesen):
 
     tarikh = f"{now.day} {bulan_malay[now.month]} {now.year}"
 
-    # Format waktu (contoh: 9.00 pagi / 3.00 petang)
+    # Format waktu (contoh: 11.00 pagi / 3.00 petang)
     hour_12 = now.strftime("%I").lstrip("0")
     am_pm = "pagi" if now.hour < 12 else ("tengah hari" if now.hour == 12 else "petang")
     if now.hour >= 19:
@@ -114,23 +112,23 @@ def generate_whatsapp_text(data_stesen):
     moderate.sort(key=lambda x: x["value"], reverse=True)
     good.sort(key=lambda x: x["value"], reverse=True)
 
-    # 3. Pembinaan Teks Mesej Rasmi (URL Tanpa Formatting Sintaks Markdown)
+    # 3. Pembinaan Teks Mesej Rasmi (Menggunakan Nama Kategori Portal APIMS)
     text = f"Berikut merupakan bacaan Indeks Pencemaran Udara (IPU) yang dikeluarkan oleh Jabatan Alam Sekitar pada {tarikh}, pukul {masa} di Selangor :\n\n"
 
     if unhealthy:
-        text += "Tidak Sihat (101 - 200)\n"
+        text += "Unhealthy (101-200)\n"
         for idx, s in enumerate(unhealthy, 1):
             text += f"{idx}. {s['location']} – {s['value']}\n"
         text += "\n"
 
     if moderate:
-        text += "Sederhana (51 - 100)\n"
+        text += "Moderate (51-100)\n"
         for idx, s in enumerate(moderate, 1):
             text += f"{idx}. {s['location']} – {s['value']}\n"
         text += "\n"
 
     if good:
-        text += "Baik (0 - 50)\n"
+        text += "Good (0-50)\n"
         for idx, s in enumerate(good, 1):
             text += f"{idx}. {s['location']} – {s['value']}\n"
         text += "\n"
@@ -158,7 +156,7 @@ if st.button("🔄 Tarik Data & Jana Mesej", type="primary"):
         stesen_data = fetch_apims_data()
         formatted_text = generate_whatsapp_text(stesen_data)
 
-        st.success("Teks berjaya dijana mengikut waktu Malaysia!")
+        st.success("Teks berjaya dijana!")
 
         # Kotak Paparan Teks Mesej
         st.text_area(
@@ -167,6 +165,6 @@ if st.button("🔄 Tarik Data & Jana Mesej", type="primary"):
             height=320,
         )
 
-        # Butang Salin ke Papan Klip (Code Block untuk kemudahan menyalin)
+        # Butang Salin ke Papan Klip
         st.subheader("Klik salin di penjuru kanan kotak di bawah:")
         st.code(formatted_text, language="text")
