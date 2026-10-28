@@ -31,28 +31,74 @@ BENCANA_SHEET_ID = "1Fp6IORRfdWSJCTC8vqSSoQz6RpCpNXHzO6jj0tHEf2c"
 CHART_SHEET_ID = "1SMu8z0MONnxkduZEaRyVNrEnH7KkvnJ9EjuVxSi3WOY"
 ILI_SARI_SHEET_ID = "1l9hK5USh1ajbuOC_bwY_R_8T1cmCL-E9c4fqGo5pyTg"
 
-# Embedded Base64 representation of the QR code (links to Google Form)
+# Clean, validated Base64 QR code image (https://forms.gle/u8M92YMLyQj3rwRT8)
 EMBEDDED_QR_B64 = (
-    "iVBORw0KGgoAAAANSUhEUgAAATUAAAE1CAYAAACGH3cEAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAD"
-    "yklEQVR4nO3c0W4bMQxE0bv//8+52yIdYNGU9eZ1mANo1rYvgiR9kL58+/P39wcA8C8/V18AAPgq"
-    "IQMQEgIAMSEAEBMCAKGg/v6f02Z7e2Zf47W97dvr2L/w9cW89q39nIe/r227vXz8b3zG/FvP137e"
-    "vK+e9v40oQYgJAQAYkIAICYEAGJCACAUBM+/+W4/7d97rW+2t6/99371vvrnff/u//n39t/79n2E"
-    "GICQEACICQGAmBAAiAkBgFAQ1M07/tb/1/veb8/sZ6y/v5j33j9b/wZCDAAhAxASAgAxIQAQEwIA"
-    "sSAo9jPe/v7d33vtv3fr72vf/e17P//Gv/21f58QA0DIAMSEAEBMCAAbfV19Afj77H439+27r7e3"
-    "Z9q71/47f74vFmIAyACExA8B7O97f/O59zff208/e+27v/3e959/3+/f3/t+/h8/R4gBIAQQEgIA"
-    "sYAA2Nvbv3vv72vv99rv/X57e/17f/+/71//vP5z/n/q3yHEABACCAkBgFhAAOxte99/87v/83u3"
-    "v/9vf//ee6+/H8gAAAgZAACAgAAASEAAACAgAAASEAAACAgAAIQMAAAgIAAAEhAAAAgIAAAEBAAA"
-    "QgYAAEAAAAgIAACEBAAAQgYAAAgIAACEDAAAIBAAAAgIAACEBAAAQgYAAEBAAAAgZAAAABAAAAgI"
-    "AAAAgIAAAAAgIAAAEBIAAAEBACAgAAASEAAAAgIAACEBAAAgIAAAEBIAAAEBACAgAAASEAAACAgA"
-    "AAgIAACEBAAAQgIAICAAAAICAAAhAQAAEBAAAAICAAAhAQAQEgAAASEAAAAgIAAAEhAAAAgIAACE"
-    "DAAAICAAAAICAAAhAQAAEBAAAAICAAAhAQAQEgAAASEAAAAgIAAAEhAAAAgIAACEBAAAICAAAAIC"
-    "AAAhAQAAICEAABAAAAICAAAhAQAAEBAAAAICAAAhAQAAEBAAAAICAAAhAQAAEBIAAICAAAAICAAA"
-    "hAQAAEBAAAAICAAAhAQAAEBIAAICAAAAICAAAAICAAAhAQAAEBIAAAICAAAhAQAQEAAACAgAAAQE"
-    "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"
+    "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"
+    "cd7q48M946D3Oq48yl73szYzPj8BiCHUAEgh1ABIIdQASCHUAEgh1ABIIdQASKnefOuxLIut61qtXkrJ"
+    "uq6rWm8rTJFd19VyzpVWFMvz/JZlCauXcy5OHb5er8UG3dfUK93fuq6hE3JLvPvp2QPP2iOfX7ioprfI"
+    "5tvIZlHP4Wk2jGy+9YhsbrznZt+oI7IZdo/3t9fnV5sZn58AxBBqAKQQagCkEGoApBBqAKQQagCkEGoA"
+    "pBBqAKQQam/geDxa0zQ3D+/o6dJ1mqaxvu9t27abx+l0+pfv+t8zz3Px/rzd/Z79jPxLgdK6t22zYRjC"
+    "6kW9L97DUy/63SPUAEgh1ABIIdQASCHUAEgh1ABIIdQASCHUAEgh1ABI2eU4b/jN81w853A4FM9JKbmu"
+    "5TGOY9jobI+cs10ul5vnpJTs8fGxeK2oPagtpWTjOIZcK3I/3wKhdue8f3lQ0nVd2P/TcDgcXEEa5XK5"
+    "FLv8t8L/CfFD1H7W1rZt2Noj9/Mt8PkJQAqhBkAKoQZACqEGQAqhBkAKoQZACqEGQMou+9RSSlX7YKL6"
+    "s7wi7y9yCmuUlFLVPfXsZ9d1rr3yTJldlsXWdb15Ttu2rl49z5rati02M3v7AqPqeffT04Qd/q5sQU6n"
+    "02ZmxePTp09RJav68OGD6/5q86yp9jHPc/V9KPG+nx7DMBSv0/e961q19zOqXuR+RjLj8xOAGEINgBRC"
+    "DYAUQg2AFEINgBRCDYAUQg2AlOrNt1+/fq1dMsS3b9/eegkAHKqH2pcvX+zLly+1y+7K8XgM+0uAzfGX"
+    "CbXrRWqapnjOPM/Fqa/DMLjW7qkXqfZ+1q73Fvj8BCCFUAMghVADIIVQAyCFUAMghVADIIVQAyCFUAMg"
+    "Jaz5NqVk8zxHXU7aOI6uMcf3Wi+S553yjrKOqudRe0R8bXv+eW+2X6HFGMAvoWmahs9PAFIINQBSCDUA"
+    "Ugg1AFIINQBSCDUAUgg1AFIINQBSCDUAUgg1AFIINQBSCDUAUgg1AFIINQBSCDUAUgg1AFIINQAAgL36"
+    "LylpEZX5Z/bkAAAAAElFTkSuQmCC"
 )
 
 VALID_DISTRICTS = [
@@ -1106,7 +1152,6 @@ def generate_pptx(
     b.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
 
   def add_slide_header(sl, t1, t2):
-    # Checks both current directory and script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = (
         "logo.png"
@@ -1252,7 +1297,6 @@ def generate_pptx(
   )
 
   # --- Add QR Code onto Title Slide ---
-  # Prioritize local qr.png if found; otherwise, decode embedded Base64 string directly
   qr_stream = None
   qr_file = (
       "qr.png"
@@ -2261,361 +2305,4 @@ def generate_pptx(
     chart_is.has_legend = True
     chart_is.legend.position = XL_LEGEND_POSITION.BOTTOM
     chart_is.legend.include_in_layout = False
-    chart_is.legend.font.size = Pt(10)
-    chart_is.legend.font.name = "Calibri"
-    chart_is.legend.font.bold = True
-
-    plotArea_is = chart_is.element.find(qn("c:chart")).find(qn("c:plotArea"))
-    for valAx in plotArea_is.findall(qn("c:valAx")):
-      grid = valAx.find(qn("c:majorGridlines"))
-      if grid is not None:
-        valAx.remove(grid)
-      remove_axis_line(valAx)
-
-      txPr = OxmlElement("c:txPr")
-      bodyPr = OxmlElement("a:bodyPr")
-      txPr.append(bodyPr)
-      txPr.append(OxmlElement("a:lstStyle"))
-      p_lbl = OxmlElement("a:p")
-      pPr_lbl = OxmlElement("a:pPr")
-      defRPr_lbl = OxmlElement("a:defRPr")
-      defRPr_lbl.set("sz", "1000")
-      defRPr_lbl.set("b", "1")
-      defRPr_lbl.set("bld", "1")
-      pPr_lbl.append(defRPr_lbl)
-      p_lbl.append(pPr_lbl)
-      txPr.append(p_lbl)
-      valAx.append(txPr)
-
-    for catAx in plotArea_is.findall(qn("c:catAx")):
-      remove_axis_line(catAx)
-
-    try:
-      chart_is.plots[0].gap_width = 30
-    except:
-      pass
-
-    if len(chart_is.series) > 0:
-      chart_is.series[0].format.fill.solid()
-      chart_is.series[0].format.fill.fore_color.rgb = RGBColor(68, 114, 196)
-
-    if len(chart_is.series) > 1:
-      chart_is.series[1].format.line.color.rgb = RGBColor(255, 0, 0)
-      chart_is.series[1].format.line.width = Pt(2.25)
-      if hasattr(chart_is.series[1], "smooth"):
-        chart_is.series[1].smooth = False
-      try:
-        chart_is.series[1].marker.style = XL_MARKER_STYLE.NONE
-      except:
-        pass
-
-    if len(chart_is.series) > 2:
-      chart_is.series[2].format.line.color.rgb = RGBColor(84, 130, 53)
-      chart_is.series[2].format.line.width = Pt(2.25)
-      if hasattr(chart_is.series[2], "smooth"):
-        chart_is.series[2].smooth = False
-      try:
-        chart_is.series[2].marker.style = XL_MARKER_STYLE.NONE
-      except:
-        pass
-
-    idx_reset = -1
-    for i in range(1, len(categories)):
-      try:
-        c_curr = int(categories[i])
-        c_prev = int(categories[i - 1])
-        if c_curr < c_prev and c_prev >= 40:
-          idx_reset = i
-          break
-      except ValueError:
-        pass
-
-    if idx_reset != -1:
-      plot_width = 12.133
-      x_pos = 0.6 + (plot_width / len(categories)) * idx_reset
-      line_is = sl_is.shapes.add_connector(
-          MSO_CONNECTOR.STRAIGHT,
-          Inches(x_pos),
-          Inches(1.4),
-          Inches(x_pos),
-          Inches(6.2),
-      )
-      line_is.line.color.rgb = RGBColor(0, 0, 0)
-      line_is.line.width = Pt(4)
-      line_is.line.dash_style = 7
-
-    info_box = sl_is.shapes.add_shape(
-        MSO_SHAPE.RECTANGLE, Inches(0.4), Inches(6.45), Inches(3.2), Inches(0.4)
-    )
-    info_box.fill.solid()
-    info_box.fill.fore_color.rgb = RGBColor(226, 239, 218)
-    info_box.line.fill.background()
-
-    p_info = info_box.text_frame.paragraphs[0]
-    p_info.text = "Peratus Reten Diisi Lengkap :"
-    p_info.font.size = Pt(11)
-    p_info.font.name = "Calibri"
-    p_info.font.bold = True
-    p_info.font.italic = True
-    p_info.font.color.rgb = NAVY
-    p_info.alignment = PP_ALIGN.LEFT
-    info_box.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
-
-    add_bottom_banner(sl_is)
-
-  # --- Slide X+3: Tren Keputusan Sampel Survelan ILI/SARI ---
-  df_sampel_clean, idx_reset_sampel = process_sampel_dataframe(
-      df_sampel, epi_week, year
-  )
-
-  if not df_sampel_clean.empty:
-    sl_sampel = prs.slides.add_slide(prs.slide_layouts[6])
-    add_slide_header(
-        sl_sampel,
-        "Tren Keputusan Sampel Survelan ILI/SARI dari Klinik& Hospital Sentinel"
-        " Selangor",
-        chart_subtitle,
-    )
-
-    col0 = df_sampel_clean.columns[0]
-    categories = [str(x) for x in df_sampel_clean[col0].tolist()]
-    series_cols = [c for c in df_sampel_clean.columns if c != col0]
-
-    chart_data_sampel = CategoryChartData()
-    chart_data_sampel.categories = categories
-    for sn in series_cols:
-      series_vals = (
-          pd.to_numeric(df_sampel_clean[sn], errors="coerce")
-          .fillna(0)
-          .tolist()
-      )
-      chart_data_sampel.add_series(str(sn), series_vals)
-
-    chart_sampel = sl_sampel.shapes.add_chart(
-        XL_CHART_TYPE.COLUMN_STACKED_100,
-        Inches(0.4),
-        Inches(1.5),
-        Inches(12.533),
-        Inches(5.1),
-        chart_data_sampel,
-    ).chart
-
-    chart_sampel.has_legend = True
-    chart_sampel.legend.position = XL_LEGEND_POSITION.BOTTOM
-    chart_sampel.legend.include_in_layout = False
-    chart_sampel.legend.font.size = Pt(10)
-    chart_sampel.legend.font.name = "Calibri"
-    chart_sampel.legend.font.bold = True
-
-    val_axis = chart_sampel.value_axis
-    val_axis.has_major_gridlines = False
-    val_axis.has_minor_gridlines = False
-    val_axis.format.line.fill.background()
-    val_axis.tick_labels.font.size = Pt(10)
-    val_axis.tick_labels.font.name = "Calibri"
-    val_axis.tick_labels.font.bold = True
-
-    cat_axis = chart_sampel.category_axis
-    cat_axis.format.line.fill.background()
-    cat_axis.tick_labels.font.size = Pt(10)
-    cat_axis.tick_labels.font.name = "Calibri"
-    cat_axis.tick_labels.font.bold = True
-
-    plotArea = chart_sampel.element.find(qn("c:chart")).find(qn("c:plotArea"))
-    for ax_tag in [qn("c:catAx"), qn("c:valAx")]:
-      for ax_elem in plotArea.findall(ax_tag):
-        remove_axis_line(ax_elem)
-
-    try:
-      chart_sampel.plots[0].gap_width = 20
-    except:
-      pass
-
-    for series in chart_sampel.series:
-      sn = series.name.strip().upper()
-      color = None
-      if "INFLUENZA A" in sn or "INF A" in sn:
-        color = RGBColor(146, 208, 80)
-      elif "INFLUENZA B" in sn or "INF B" in sn:
-        color = RGBColor(68, 114, 196)
-      elif "COVID" in sn:
-        color = RGBColor(255, 192, 0)
-
-      if color:
-        series.format.fill.solid()
-        series.format.fill.fore_color.rgb = color
-
-    if idx_reset_sampel != -1:
-      plot_width = 12.533
-      x_pos = 0.4 + (plot_width / len(categories)) * idx_reset_sampel
-      line_sampel = sl_sampel.shapes.add_connector(
-          MSO_CONNECTOR.STRAIGHT,
-          Inches(x_pos),
-          Inches(1.5),
-          Inches(x_pos),
-          Inches(6.5),
-      )
-      line_sampel.line.color.rgb = RGBColor(0, 0, 0)
-      line_sampel.line.width = Pt(4)
-      line_sampel.line.dash_style = 7
-
-    add_bottom_banner(sl_sampel)
-
-  # --- Slide X+4: Prestasi Penghantaran Sampel ILI/SARI oleh Klinik Sentinel ---
-  if not df_prestasi.empty:
-    sl_prestasi = prs.slides.add_slide(prs.slide_layouts[6])
-    add_slide_header(
-        sl_prestasi,
-        "Prestasi Penghantaran Sampel ILI/SARI oleh Klinik Sentinel",
-        f"ME {epi_week:02d} / {year}",
-    )
-
-    tb = sl_prestasi.shapes.add_table(
-        len(df_prestasi),
-        5,
-        Inches(0.8),
-        Inches(1.6),
-        Inches(11.733),
-        Inches(4.8),
-    ).table
-    tb.columns[0].width = Inches(2.2)
-    tb.columns[1].width = Inches(2.7)
-    tb.columns[2].width = Inches(2.1)
-    tb.columns[3].width = Inches(2.533)
-    tb.columns[4].width = Inches(2.2)
-
-    for r_i in range(len(df_prestasi)):
-      row_vals = df_prestasi.iloc[r_i].tolist()
-      is_last_row = r_i == len(df_prestasi) - 1
-
-      if is_last_row:
-        tb.cell(r_i, 0).merge(tb.cell(r_i, 1))
-        write_cell(tb.cell(r_i, 0), "JUMLAH", bold=True, size=18)
-        for c_i in range(2, 5):
-          v_raw = row_vals[c_i] if c_i < len(row_vals) else ""
-          write_cell(
-              tb.cell(r_i, c_i),
-              format_prestasi_val(v_raw, c_i, r_i),
-              bold=True,
-              size=18,
-          )
-      else:
-        for c_i in range(5):
-          v_raw = row_vals[c_i] if c_i < len(row_vals) else ""
-          write_cell(
-              tb.cell(r_i, c_i),
-              format_prestasi_val(v_raw, c_i, r_i),
-              bold=True,
-              size=18,
-          )
-
-    for r_i, row in enumerate(tb.rows):
-      is_hdr_or_tot = r_i == 0 or r_i == len(tb.rows) - 1
-      for cell in row.cells:
-        set_cell_border(cell)
-        cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-        cell.fill.solid()
-        cell.fill.fore_color.rgb = (
-            LIGHT_GREY if is_hdr_or_tot else RGBColor(255, 255, 255)
-        )
-
-    add_bottom_banner(sl_prestasi)
-
-  buffer = io.BytesIO()
-  prs.save(buffer)
-  buffer.seek(0)
-  return buffer
-
-
-# ---------------------------------------------------------
-# UI Runner
-# ---------------------------------------------------------
-st.title("📊 Selangor Epi Review Slide Generator")
-st.markdown(
-    f"**Target Output:** `ME {epi_week:02d} / {year}` *(Waktu Malaysia UTC+8)*"
-)
-st.caption("Jabatan Kesihatan Negeri Selangor — Unit Survelan & Kesiapsiagaan")
-
-st.divider()
-st.subheader("1. Upload Data")
-uploaded_file = st.file_uploader(
-    "Upload raw Excel data (Analisa e-Notifikasi)", type=["xlsx", "xls"]
-)
-
-if uploaded_file:
-  with st.spinner("Processing data and generating slides automatically..."):
-    df_g = fetch_graf_data()
-    df_ili = fetch_ili_sari_data()
-    df_sampel = fetch_survelan_sampel_data()
-    df_prestasi = fetch_prestasi_klinik_data()
-
-    (
-        t_rows,
-        s_sem,
-        s_kum,
-        df_peny,
-        df_dist,
-        df_b_ct,
-        df_h_ct,
-        df_dn,
-        df_dn_exc,
-        df_h_dn,
-        l24,
-        l7,
-        l24_r,
-        l7_r,
-        df_w,
-        df_ben,
-    ) = load_and_process_data(
-        uploaded_file,
-        epi_week,
-        INCLUSION_DIAGNOSES,
-        EXCLUSION_DIAGNOSES_14,
-    )
-
-    pptx_buffer = generate_pptx(
-        s_sem,
-        s_kum,
-        df_peny,
-        df_dist,
-        df_b_ct,
-        df_h_ct,
-        df_dn,
-        df_dn_exc,
-        df_h_dn,
-        l24,
-        l7,
-        df_w,
-        df_ben,
-        df_g,
-        df_ili,
-        df_sampel,
-        df_prestasi,
-        epi_week,
-        year,
-    )
-
-    st.success(f"Successfully processed {t_rows:,} records. Slide deck is ready!")
-
-    c1, c2 = st.columns(2)
-    with c1:
-      st.download_button(
-          "📥 Download Presentation (.pptx)",
-          pptx_buffer,
-          f"Selangor_Epi_Review_ME{epi_week:02d}_{year}.pptx",
-          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-          use_container_width=True,
-      )
-    with c2:
-      st.download_button(
-          "📥 Download Raw Data Lewat (.xlsx)",
-          generate_lewat_excel(l24_r, l7_r),
-          f"Senarai_Lewat_Notifikasi_ME{epi_week:02d}_{year}.xlsx",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          use_container_width=True,
-      )
-else:
-  st.info(
-      "⚠️ Please upload the Excel file. The presentation will automatically"
-      " generate once uploaded."
-  )
+    chart_is.legend.font.size =
